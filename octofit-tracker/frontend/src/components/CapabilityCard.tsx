@@ -1,29 +1,26 @@
 import { useEffect, useState } from 'react';
-import { getJson } from '../api/client.js';
 
-type Props<Response, Item> = {
+type Props<Item> = {
   title: string;
   description: string;
-  path: string;
-  select: (response: Response) => Item[];
+  load: () => Promise<Item[]>;
   emptyText: string;
   renderItem: (item: Item) => string;
 };
 
 type State<Item> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; items: Item[] };
 
-export function CapabilityCard<Response, Item>({ title, description, path, select, emptyText, renderItem }: Props<Response, Item>) {
+export function CapabilityCard<Item>({ title, description, load, emptyText, renderItem }: Props<Item>) {
   const [state, setState] = useState<State<Item>>({ status: 'loading' });
 
   useEffect(() => {
     let active = true;
     setState({ status: 'loading' });
-    getJson<Response>(path)
-      .then((response) => active && setState({ status: 'ready', items: select(response) }))
+    load()
+      .then((items) => active && setState({ status: 'ready', items }))
       .catch((error: Error) => active && setState({ status: 'error', message: error.message }));
     return () => { active = false; };
-    // select is a stable module-level function in each caller.
-  }, [path]);
+  }, [load]);
 
   return (
     <section className="card h-100">
